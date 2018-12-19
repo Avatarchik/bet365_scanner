@@ -84,6 +84,7 @@ type
     ageio_savetoexcel: TAdvGridExcelIO;
     Panel10: TPanel;
     lbl_league_message: TLabel;
+    Panel11: TPanel;
     procedure btn_basketball_runClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure chrm_basketballLoadEnd(Sender: TObject; const browser: ICefBrowser;

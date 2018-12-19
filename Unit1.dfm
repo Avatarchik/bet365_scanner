@@ -295,17 +295,6 @@ object Form1: TForm1
           Height = 257
           Align = alClient
           TabOrder = 1
-          object chrm_tmp: TChromium
-            Left = 345
-            Top = 1
-            Width = 520
-            Height = 255
-            Align = alClient
-            DefaultUrl = 'about:blank'
-            TabOrder = 2
-            Visible = False
-            OnLoadEnd = chrm_tmpLoadEnd
-          end
           object Panel7: TPanel
             Left = 1
             Top = 1
@@ -319,7 +308,7 @@ object Form1: TForm1
             Font.Name = 'Tahoma'
             Font.Style = []
             ParentFont = False
-            TabOrder = 1
+            TabOrder = 0
             object Panel8: TPanel
               Left = 1
               Top = 1
@@ -375,18 +364,48 @@ object Form1: TForm1
               TabOrder = 1
             end
           end
-          object chrm_basketball: TChromium
+          object Panel11: TPanel
             Left = 345
             Top = 1
             Width = 520
             Height = 255
             Align = alClient
-            DefaultUrl = 'about:blank'
-            TabOrder = 0
-            OnLoadEnd = chrm_basketballLoadEnd
-            OnLoadError = chrm_basketballLoadError
-            OnAddressChange = chrm_basketballAddressChange
-            Options.ApplicationCache = STATE_DISABLED
+            Caption = 'Panel11'
+            TabOrder = 1
+            ExplicitLeft = 480
+            ExplicitTop = 40
+            ExplicitWidth = 185
+            ExplicitHeight = 41
+            object chrm_tmp: TChromium
+              Left = 1
+              Top = 1
+              Width = 518
+              Height = 253
+              Align = alClient
+              DefaultUrl = 'about:blank'
+              TabOrder = 0
+              Visible = False
+              OnLoadEnd = chrm_tmpLoadEnd
+              ExplicitLeft = 345
+              ExplicitWidth = 520
+              ExplicitHeight = 255
+            end
+            object chrm_basketball: TChromium
+              Left = 1
+              Top = 1
+              Width = 518
+              Height = 253
+              Align = alClient
+              DefaultUrl = 'about:blank'
+              TabOrder = 1
+              OnLoadEnd = chrm_basketballLoadEnd
+              OnLoadError = chrm_basketballLoadError
+              OnAddressChange = chrm_basketballAddressChange
+              Options.ApplicationCache = STATE_DISABLED
+              ExplicitLeft = 345
+              ExplicitWidth = 520
+              ExplicitHeight = 255
+            end
           end
         end
         object Panel1: TPanel
@@ -636,10 +655,6 @@ object Form1: TForm1
               Font.Style = [fsBold]
               ImageIndex = 1
               ParentFont = False
-              ExplicitLeft = 0
-              ExplicitTop = 0
-              ExplicitWidth = 0
-              ExplicitHeight = 0
               object mmo_basketball_message: TMemo
                 Left = 0
                 Top = 35
@@ -732,8 +747,8 @@ object Form1: TForm1
   end
   object tmr_game_refresh: TTimer
     OnTimer = tmr_game_refreshTimer
-    Left = 616
-    Top = 323
+    Left = 608
+    Top = 267
   end
   object tmr_odds_checkcrash: TTimer
     Interval = 60000
@@ -745,8 +760,8 @@ object Form1: TForm1
     DefaultExt = 'xls'
     FileName = 'bet365'#25475#25551#32080#26524
     Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
-    Left = 461
-    Top = 354
+    Left = 405
+    Top = 194
   end
   object ageio_savetoexcel: TAdvGridExcelIO
     AdvStringGrid = asg_basketball_scanresult
@@ -756,7 +771,7 @@ object Form1: TForm1
     GridStartRow = 0
     GridStartCol = 0
     Version = '3.13'
-    Left = 576
-    Top = 248
+    Left = 472
+    Top = 200
   end
 end
