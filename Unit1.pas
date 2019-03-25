@@ -36,6 +36,8 @@ type
     Spread2:string;
     Total_Over:string;
     Total_Under:string;
+    Handicap:string; // 讓分
+    Total:string; //總分
   end;
 
 type
@@ -118,6 +120,10 @@ type
     procedure doCompareGame(TmpGameList:TList<TGame>);
     procedure getSelectedLeagueList;
     procedure CopyToSelectedGameList_Old(Source:TList<TGame>);
+    //將賽事加到TmpGameList
+    procedure addGame(var gamelist:TList<TGame>; game:TGame);
+    //更新賽事的盤口資料
+    procedure updateGame(var gamelist:TList<TGame>; game:TGame; data_type:string; data:string);
   public
     { Public declarations }
     function ExtractDomain(URL:String):String;
@@ -148,6 +154,7 @@ implementation
 uses
   MSHTML, ActiveX, ComObj, StrUtils, MMSystem;
 
+// 取得聯盟列表
 procedure TForm1.getSelectedLeagueList;
 var
   i:integer;
@@ -162,6 +169,7 @@ begin
   end;
 end;
 
+// 取得賽事的SportKey
 function TForm1.getGameSportKey(key:string):string;
 var
   i:integer;
@@ -182,6 +190,7 @@ begin
   result:=tmp;
 end;
 
+// 處理總分盤資料
 procedure TForm1.putTotalData(var GameList:TList<TGame>;TotalGameList:TList<TGame>);
 var
   i,j:integer;
@@ -199,6 +208,7 @@ begin
   end;
 end;
 
+//
 procedure TForm1.CopyToSelectedGameList_Old(Source:TList<TGame>);
 var
   i:integer;
@@ -218,10 +228,13 @@ begin
     tmp.Spread2:=Source[i].Spread2;
     tmp.Total_Over:=Source[i].Total_Over;
     tmp.Total_Under:=Source[i].Total_Under;
+    tmp.Handicap:=Source[i].Handicap;
+    tmp.Total:=Source[i].Total;
     GameList_Old.Add(tmp);
   end;
 end;
 
+// 比較取出結果
 procedure TForm1.doCompareGame(TmpGameList:TList<TGame>);
 var
   i,j:integer;
@@ -242,34 +255,30 @@ begin
       begin
         IsExists:=True;
         //有變化
-        if (TmpGameList[i].Spread1 <> GameList_Old[j].Spread1)
-          or (TmpGameList[i].Spread2 <> GameList_Old[j].Spread2)
-          or (TmpGameList[i].Total_Over <> GameList_Old[j].Total_Over)
-          or (TmpGameList[i].Total_Under <> GameList_Old[j].Total_Under)
-        then
+        if (TmpGameList[i].Handicap <> GameList_Old[j].Handicap) or (TmpGameList[i].Total <> GameList_Old[j].Total) then
         begin
           asg_basketball_scanresult.Cells[0, asg_basketball_scanresult.RowCount]:=TmpGameList[i].LeagueName;
           asg_basketball_scanresult.Cells[1, asg_basketball_scanresult.RowCount]:=TmpGameList[i].HomeTeam;
           asg_basketball_scanresult.Cells[2, asg_basketball_scanresult.RowCount]:=TmpGameList[i].VisitTeam;
-          asg_basketball_scanresult.Cells[3, asg_basketball_scanresult.RowCount]:=GameList_Old[j].Spread1;
-          asg_basketball_scanresult.Cells[4, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Spread1;
-          asg_basketball_scanresult.Cells[5, asg_basketball_scanresult.RowCount]:=GameList_Old[j].Total_Over;
-          asg_basketball_scanresult.Cells[6, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Total_Over;
+          asg_basketball_scanresult.Cells[3, asg_basketball_scanresult.RowCount]:=GameList_Old[j].Handicap;
+          asg_basketball_scanresult.Cells[4, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Handicap;
+          asg_basketball_scanresult.Cells[5, asg_basketball_scanresult.RowCount]:=GameList_Old[j].Total;
+          asg_basketball_scanresult.Cells[6, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Total;
           asg_basketball_scanresult.Cells[7, asg_basketball_scanresult.RowCount]:=formatdatetime('hh:nn', now);
           //讓分有變化
-          if (TmpGameList[i].Spread1 <> GameList_Old[j].Spread1) or (TmpGameList[i].Spread2 <> GameList_Old[j].Spread2) then
+          if (TmpGameList[i].Handicap <> GameList_Old[j].Handicap) then
           begin
             asg_basketball_scanresult.Colors[3, asg_basketball_scanresult.RowCount]:=clYellow;
             asg_basketball_scanresult.Colors[4, asg_basketball_scanresult.RowCount]:=clYellow;
           end;
           //總分有變化
-          if (TmpGameList[i].Total_Over <> GameList_Old[j].Total_Over) or (TmpGameList[i].Total_Under <> GameList_Old[j].Total_Under) then
+          if (TmpGameList[i].Total <> GameList_Old[j].Total) then
           begin
             asg_basketball_scanresult.Colors[5, asg_basketball_scanresult.RowCount]:=clMoneyGreen;
             asg_basketball_scanresult.Colors[6, asg_basketball_scanresult.RowCount]:=clMoneyGreen;
           end;
           mmo_basketball_message.Lines.Add('***************************************************************************************************************************************************************************************************************************');
-          mmo_basketball_message.Lines.Add('掃描結果(有不同): '+TmpGameList[i].LeagueName+', '+TmpGameList[i].HomeTeam+' vs '+TmpGameList[i].VisitTeam+' [讓分1: '+GameList_Old[j].Spread1+' => '+TmpGameList[i].Spread1+'] [讓分2: '+GameList_Old[j].Spread2+' => '+TmpGameList[i].Spread2+'] [總分高: '+GameList_Old[j].Total_Over+' => '+TmpGameList[i].Total_Over+'] [總分低: '+GameList_Old[j].Total_Under+' => '+TmpGameList[i].Total_Under+']');
+          mmo_basketball_message.Lines.Add('掃描結果(有不同): '+TmpGameList[i].LeagueName+', '+TmpGameList[i].HomeTeam+' vs '+TmpGameList[i].VisitTeam+' [讓分: '+GameList_Old[j].Handicap+' => '+TmpGameList[i].Handicap+'] [總分: '+GameList_Old[j].Total+' => '+TmpGameList[i].Total+']');
           mmo_basketball_message.Lines.Add('***************************************************************************************************************************************************************************************************************************');
           asg_basketball_scanresult.RowCount:=asg_basketball_scanresult.RowCount + 1;
           IsChanged:=true;
@@ -278,7 +287,7 @@ begin
         else
         begin
           mmo_basketball_message.Lines.Add('-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------');
-          mmo_basketball_message.Lines.Add('掃描結果(相同): '+TmpGameList[i].LeagueName+', '+TmpGameList[i].HomeTeam+' vs '+TmpGameList[i].VisitTeam+' [讓分1: '+GameList_Old[j].Spread1+' => '+TmpGameList[i].Spread1+'] [讓分2: '+GameList_Old[j].Spread2+' => '+TmpGameList[i].Spread2+'] [總分高: '+GameList_Old[j].Total_Over+' => '+TmpGameList[i].Total_Over+'] [總分低: '+GameList_Old[j].Total_Under+' => '+TmpGameList[i].Total_Under+']');
+          mmo_basketball_message.Lines.Add('掃描結果(相同): '+TmpGameList[i].LeagueName+', '+TmpGameList[i].HomeTeam+' vs '+TmpGameList[i].VisitTeam+' [讓分: '+GameList_Old[j].Handicap+' => '+TmpGameList[i].Handicap+'] [總分: '+GameList_Old[j].Total+' => '+TmpGameList[i].Total+']');
           mmo_basketball_message.Lines.Add('-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------');
         end;
       end;
@@ -290,9 +299,9 @@ begin
       asg_basketball_scanresult.Cells[1, asg_basketball_scanresult.RowCount]:=TmpGameList[i].HomeTeam;
       asg_basketball_scanresult.Cells[2, asg_basketball_scanresult.RowCount]:=TmpGameList[i].VisitTeam;
       asg_basketball_scanresult.Cells[3, asg_basketball_scanresult.RowCount]:='';
-      asg_basketball_scanresult.Cells[4, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Spread1;
+      asg_basketball_scanresult.Cells[4, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Handicap;
       asg_basketball_scanresult.Cells[5, asg_basketball_scanresult.RowCount]:='';
-      asg_basketball_scanresult.Cells[6, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Total_Over;
+      asg_basketball_scanresult.Cells[6, asg_basketball_scanresult.RowCount]:=TmpGameList[i].Total;
       asg_basketball_scanresult.Cells[7, asg_basketball_scanresult.RowCount]:=formatdatetime('hh:nn', now);
       asg_basketball_scanresult.RowCount:=asg_basketball_scanresult.RowCount + 1;
     end;
@@ -333,6 +342,7 @@ begin
   end;
 end;
 
+// 點擊聯盟全選
 procedure TForm1.cb_selectallClick(Sender: TObject);
 begin
   if cb_selectall.Checked then
@@ -346,6 +356,7 @@ begin
   getSelectedLeagueList;
 end;
 
+// 取得域名
 function TForm1.ExtractDomain(URL:String):String;
 begin
   Result := LowerCase(URL);
@@ -361,6 +372,7 @@ begin
   end;
 end;
 
+// 點擊自動更新
 procedure TForm1.chk_game_refreshClick(Sender: TObject);
 begin
   if chk_game_refresh.Checked then
@@ -374,17 +386,20 @@ begin
   end;
 end;
 
+//
 procedure TForm1.writeOddsMessage(Content:WideString);
 begin
   mmo_basketball_message.Lines.Add('['+formatdatetime('yyyy-mm-dd hh:nn:ss.zzz',Now)+'] '+Trim(Content));
 end;
 
+// 點擊清除
 procedure TForm1.btn_clearClick(Sender: TObject);
 begin
   asg_basketball_scanresult.ClearRows(1, asg_basketball_scanresult.RowCount -1);
   asg_basketball_scanresult.RowCount:=1;
 end;
 
+//
 procedure TForm1.btn_getgamesClick(Sender: TObject);
 begin
   screen.Cursor:=crHourGlass;
@@ -399,6 +414,7 @@ begin
   chrm_basketball.Load(Basketball.HomeURL);
 end;
 
+//
 procedure TForm1.Button1Click(Sender: TObject);
 var
   i:integer;
@@ -412,12 +428,14 @@ begin
   mmo_basketball_message.Lines.Add('=====================================================================================');
 end;
 
+//
 procedure TForm1.Button2Click(Sender: TObject);
 begin
   mmo_basketball_message.Clear;
   mmo_basketball_error.Clear;
 end;
 
+//
 procedure TForm1.Button3Click(Sender: TObject);
 begin
   if cb_sound.Checked then
@@ -426,6 +444,7 @@ begin
     showmessage('請勾選發出警告聲 !');
 end;
 
+//
 procedure TForm1.BitBtn1Click(Sender: TObject);
 var
   IsDeleted:Boolean;
@@ -455,6 +474,7 @@ begin
   end;
 end;
 
+//
 procedure TForm1.btn_basketball_runClick(Sender: TObject);
 begin
   if (IsGetLeagues = False) and (IsRunning = False) then
@@ -475,12 +495,14 @@ begin
   end;
 end;
 
+//
 procedure TForm1.chrm_basketballAddressChange(Sender: TObject;
   const browser: ICefBrowser; const frame: ICefFrame; const url: ustring);
 begin
   lbledt_basketball_url.Text:=url;
 end;
 
+//
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   LeagueList:=TList<TLeague>.Create;
@@ -494,6 +516,7 @@ begin
   asg_basketball_scanresult.RowCount:=1;
 end;
 
+//
 procedure TForm1.chrm_basketballLoadEnd(Sender: TObject; const browser: ICefBrowser;
   const frame: ICefFrame; httpStatusCode: Integer);
 var EndTime: TTime;
@@ -518,6 +541,7 @@ begin
   end;
 end;
 
+//
 procedure TForm1.chrm_basketballLoadError(Sender: TObject; const browser: ICefBrowser;
   const frame: ICefFrame; errorCode: Integer; const errorText,
   failedUrl: ustring);
@@ -525,6 +549,7 @@ begin
   mmo_basketball_error.Lines.Add('['+formatdatetime('yyyy-mm-dd hh:nn:ss.zzz',Now)+'] '+'LoadError errorCode = '+inttostr(errorCode)+', errorText = '+errorText+', failedUrl = '+failedUrl);
 end;
 
+//
 procedure TForm1.chrm_tmpLoadEnd(Sender: TObject; const browser: ICefBrowser;
   const frame: ICefFrame; httpStatusCode: Integer);
 var EndTime:TTime;
@@ -540,6 +565,7 @@ begin
   end
 end;
 
+//
 procedure TForm1.clb_leagueClickCheck(Sender: TObject);
 begin
   if (IsGetLeagues = False) and (IsRunning = False) then
@@ -559,6 +585,7 @@ begin
   end;
 end;
 
+//
 procedure TForm1.refreshBasketballLeagueList(const str:ustring);
 var
   Document:IHTMLDocument2;
@@ -848,19 +875,73 @@ begin
   end;
 end;
 
+//新增賽事到TmpGameList
+procedure TForm1.addGame(var gamelist:TList<TGame>; game:TGame);
+var 
+  i:integer;
+  isExists:boolean;
+begin
+  isExists:=false;
+  for i := 0 to gamelist.Count - 1 do
+  begin    
+    if 
+    (trim(gamelist.Items[i].LeagueName) = trim(game.LeagueName)) and
+    (trim(gamelist.Items[i].GameDate) = trim(game.GameDate)) and
+    (trim(gamelist.Items[i].HomeTeam) = trim(game.HomeTeam)) and
+    (trim(gamelist.Items[i].VisitTeam) = trim(game.VisitTeam))
+  then
+    isExists:=true;
+  end;
+
+  if isExists = false then
+  begin
+    gamelist.Add(game);
+  end;
+end;
+
+//更新盤口資料
+procedure TForm1.updateGame(var gamelist:TList<TGame>; game:TGame; data_type:string; data: string);
+var
+  i:integer;
+  g:TGame;
+begin
+  for i := 0 to gamelist.Count -1 do
+  begin
+    if 
+      ((gamelist.Items[i].LeagueName) = trim(game.LeagueName)) and
+      ((gamelist.Items[i].GameDate) = trim(game.GameDate)) and
+      ((gamelist.Items[i].HomeTeam) = trim(game.HomeTeam)) and
+      ((gamelist.Items[i].VisitTeam) = trim(game.VisitTeam))      
+    then
+    begin
+      g:=gamelist.Items[i];
+      if UpperCase(data_type) = 'HANDICAP' then
+      begin
+        g.Handicap:=data;
+      end
+      else if UpperCase(data_type) = 'TOTAL' then
+      begin
+        g.Total:=data;
+      end;
+      gamelist.Items[i]:=g;
+    end;
+  end;
+end;
+
 //取得籃球賽事列表並寫入GameList
 procedure TForm1.getBasketballGameList(const str:ustring);
 var
   Document:IHTMLDocument2;
   Body:IHTMLElement2;
-  Tags,Games:IHTMLElementCollection;
+  Tags,Games,Tmps,Tmps1,Tmps2,Tmps3,TmpCollection:IHTMLElementCollection;
   Tag,Tmp,GameElement,OddsElement,SpreadElement1,SpreadElement2:IHTMLElement;
-  i,j:integer;
+  i,j,k,l,count:integer;
   v:Variant;
   Game:TGame;
-  GameDate:string;
+  GameDate,data:string;
   TmpGameList:TList<TGame>;
   TotalGameList:TList<TGame>;
+  isGotData:boolean;
 begin
   //取得聯盟中所有赛事资料
   try
@@ -883,48 +964,119 @@ begin
       begin
         Tag := Tags.item(i, EmptyParam) as IHTMLElement;
         //取得賽事列表元素
-        if AnsiSameText(Tag._className, 'enhancedPod tabbed cc_12_7') then
+        if AnsiContainsStr(Tag._className, 'cm-MarketGroupForGroupedMarket') then
         begin
           //將全部賽事中的各個賽事取出
           Games:=(Tag.children as IHTMLElementCollection);
           for j := 0 to Pred(Games.length) do
           begin
             Tmp:=Games.item(j, EmptyParam) as IHTMLElement;
-            //日期
-            if AnsiContainsText(Tmp._className, 'podHeaderRow') then
+            if AnsiSameText(Tmp._className, 'gl-MarketGroup_Wrapper ') then
             begin
-              GameDate:=trim(((((Tag.children as IHTMLElementCollection).item(0, 0) as IHTMLElement).children as IHTMLElementCollection).item(0, 0) as IHTMLElement).innerText);
-            end
-            //盤口資料
-            else if AnsiContainsText(Tmp._className, 'podEventRow') then
-            begin
-              Game.GameDate:=GameDate;
-              //讓分
-              if AnsiSameText(Tmp.getAttribute('data-plbtid', 0), '1453') then
+              Tmps:=Tmp.children as IHTMLElementCollection;
+              Tmps:=(Tmps.item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+              //取得聯盟
+              Game.LeagueName:=SelectedLeagueList[LeagueIndex].Name;
+              //取得對戰球隊
+              Tmps1:=(Tmps.item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+              Tmp:=Tmps1.item(0, EmptyParam) as IHTMLElement;
+              for k := 0 to Pred(Tmps1.length) do
               begin
-                Game.LeagueName:=SelectedLeagueList[LeagueIndex].Name;
-                Game.GameID:=trim(Tmp.getAttribute('data-parentfixtureid', 0));
-                GameElement:=(Tmp.children as IHTMLElementCollection).item(0, 0) as IHTMLElement;
-                OddsElement:=(Tmp.children as IHTMLElementCollection).item(1, 0) as IHTMLElement;
-                Tmp:=(GameElement.children as IHTMLElementCollection).item(0, 0) as IHTMLElement;
-                Game.HomeTeam:=trim(((Tmp.children as IHTMLElementCollection).item(0, 0) as IHTMLElement).innerText);
-                Game.VisitTeam:=trim(((Tmp.children as IHTMLElementCollection).item(1, 0) as IHTMLElement).innerText);
-                Game.GameTime:=trim(((((Tmp.children as IHTMLElementCollection).item(2, 0) as IHTMLElement).children as IHTMLElementCollection).item(0, 0) as IHTMLElement).innerText);
-                SpreadElement1:=(OddsElement.children as IHTMLElementCollection).item(0, 0) as IHTMLElement;
-                SpreadElement2:=(OddsElement.children as IHTMLElementCollection).item(1, 0) as IHTMLElement;
-                Game.Spread1:=trim(((SpreadElement1.children as IHTMLElementCollection).item(0, 0) as IHTMLElement).innerText);
-                Game.Spread2:=trim(((SpreadElement1.children as IHTMLElementCollection).item(1, 0) as IHTMLElement).innerText);
-                TmpGameList.Add(Game);
-              end
-              //總分
-              else if AnsiSameText(Tmp.getAttribute('data-plbtid', 0), '1454') then
+                Tmp:=Tmps1.item(k, EmptyParam) as IHTMLElement;
+                //取得比賽日期
+                if AnsiContainsStr(Tmp._className, 'sl-MarketHeaderLabel') then
+                begin
+                  Game.GameDate:=Tmp.innerText;
+                end
+                //取得比賽時間、主客隊名稱
+                else if (
+                  AnsiSameText(Tmp._className, 'cm-ParticipantWithBookClosesDonBest sl-CouponParticipantIPPGBase ') or
+                  AnsiSameText(Tmp._className, 'cm-ParticipantWithBookClosesDonBest cm-ParticipantWithBookClosesDonBest_HasStatsIcon sl-CouponParticipantIPPGBase ')
+                ) then
+                begin                
+                  //取得比賽時間
+                  Game.GameTime:=((((Tmp.children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
+                  //mmo_basketball_message.Lines.Add(Game.GameTime);
+                  Tmp:=(Tmp.children as IHTMLElementCollection).item(1, EmptyParam) as IHTMLElement;
+                  //取得主隊名稱
+                  Game.HomeTeam:=((((Tmp.children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
+                  //取得客隊名稱
+                  Game.VisitTeam:=((((Tmp.children as IHTMLElementCollection).item(1, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
+                  form1.addGame(TmpGameList, Game);
+                end;
+              end;
+              // 讓分盤
+              if Tmps.length = 3 then
               begin
-                Game.GameID:=trim(Tmp.getAttribute('data-parentfixtureid', 0));
-                Tmp:=(Tmp.children as IHTMLElementCollection).item(1, 0) as IHTMLElement;
-                Tmp:=(Tmp.children as IHTMLElementCollection).item(0, 0) as IHTMLElement;
-                Game.Total_Over:=trim(((Tmp.children as IHTMLElementCollection).item(0, 0) as IHTMLElement).innerText);
-                Game.Total_Under:=trim(((Tmp.children as IHTMLElementCollection).item(1, 0) as IHTMLElement).innerText);
-                TotalGameList.Add(Game);
+                // 取得第三欄資料
+                Tmps2:=(Tmps.item(2, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+                count:=0;
+                isGotData:=false;
+                for k := 0 to Pred(Tmps2.length) do
+                begin
+                  Tmp:=Tmps2.item(k, EmptyParam) as IHTMLElement;
+                  if AnsiContainsStr(Tmp._className, 'cm-ParticipantOddsWithHandicapDonBest gl-Participant_General') then
+                  begin
+                    if isGotData = false then
+                    begin
+                      if count < TmpGameList.Count then
+                      begin
+                        Game:=TmpGameList.Items[count];
+                        TmpCollection:=Tmp.children as IHTMLElementCollection;
+                        data:='';
+                        for l := 0 to Pred(TmpCollection.length) do
+                        begin
+                          data:=data+' '+trim((TmpCollection.item(l, EmptyParam) as IHTMLElement).innerText);
+                        end;
+                        form1.updateGame(TmpGameList, Game, 'Handicap', trim(data));
+                        isGotData:=true;
+                        inc(count);
+                      end;                      
+                    end
+                    else
+                    begin
+                      isGotData:=false;
+                    end;
+                  end;
+                end;
+              end;
+              // 總分盤
+              if Tmps.length = 2 then
+              begin
+                // 取得第二欄資料
+                Tmps3:=(Tmps.item(1, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+                count:=0;
+                isGotData:=false;
+                for k := 0 to Pred(Tmps3.length) do
+                begin
+                  Tmp:=Tmps3.item(k, EmptyParam) as IHTMLElement;
+                  if AnsiContainsStr(Tmp._className, 'cm-ParticipantCenteredAndStackedDonBest gl-Participant_General') then
+                  begin
+                    if isGotData = false then
+                    begin
+                      if count < TmpGameList.Count then
+                      begin
+                        Game:=TmpGameList.Items[count];
+                        TmpCollection:=Tmp.children as IHTMLElementCollection;
+                        data:='';
+                        for l := 0 to Pred(TmpCollection.length) do
+                        begin
+                          data:=data+' '+trim((TmpCollection.item(l, EmptyParam) as IHTMLElement).innerText);
+                        end;
+                        if trim(AnsiReplaceStr(data, '超過', '')) = '' then data:='';                                            
+                        data:=AnsiReplaceStr(data, '超過', '超過 ');
+                        data:=AnsiReplaceStr(data, '低於', '低於 ');
+                        form1.updateGame(TmpGameList, Game, 'Total', trim(data));
+                        isGotData:=true;
+                        inc(count);
+                      end;                      
+                    end
+                    else
+                    begin
+                      isGotData:=false;
+                    end;
+                  end;
+                end;
               end;
             end;
           end;
@@ -932,11 +1084,17 @@ begin
       end;
     end;
   finally
+    // debug用
+    {for i := 0 to TmpGameList.Count -1 do
+    begin
+      mmo_basketball_message.Lines.Add(TmpGameList.Items[i].LeagueName+','+TmpGameList.Items[i].GameDate+','+TmpGameList.Items[i].HomeTeam+','+TmpGameList.Items[i].VisitTeam+','+TmpGameList.Items[i].GameTime+','+TmpGameList.Items[i].Handicap+','+TmpGameList.Items[i].Total);
+    end;}
+
     //有掃到賽事
     if TmpGameList.Count > 0 then
     begin
       //將總得分資料寫到TmpGameList
-      putTotalData(TmpGameList,TotalGameList);
+      //putTotalData(TmpGameList,TotalGameList);
       //排除走地及無盤口
       i:=0;
       while i <= TmpGameList.Count - 1 do
@@ -947,10 +1105,12 @@ begin
             and (trim(TmpGameList[i].Spread2) = '')
             and (trim(TmpGameList[i].Total_Over) = '')
             and (trim(TmpGameList[i].Total_Under) = '')
+            and (trim(TmpGameList[i].Handicap) = '')
+            and (trim(TmpGameList[i].Total) = '')
           )
         then
         begin
-          tmpGameList.Delete(i);
+          TmpGameList.Delete(i);
         end
         else
         begin
@@ -989,10 +1149,12 @@ begin
         TmpGameList[i].GameID+', '+
         TmpGameList[i].HomeTeam+', '+
         TmpGameList[i].VisitTeam+', '+
-        TmpGameList[i].Spread1+', '+
-        TmpGameList[i].Spread2+', '+
-        TmpGameList[i].Total_Over+', '+
-        TmpGameList[i].Total_Under
+        TmpGameList[i].Handicap+', '+
+        TmpGameList[i].Total
+        //TmpGameList[i].Spread1+', '+
+        //TmpGameList[i].Spread2+', '+
+        //TmpGameList[i].Total_Over+', '+
+        //TmpGameList[i].Total_Under
       );
     end;
     inc(LeagueIndex);
@@ -1030,6 +1192,7 @@ begin
   end;
 end;
 
+//
 procedure TForm1.tmr_game_refreshTimer(Sender: TObject);
 var
   myTime:TDateTime;
@@ -1052,6 +1215,7 @@ begin
   lbl_game_countdown.Refresh;
 end;
 
+//
 procedure TForm1.tmr_odds_checkcrashTimer(Sender: TObject);
 begin
   {if chk_game_refresh.Checked then
@@ -1077,6 +1241,7 @@ begin
   end;}
 end;
 
+//
 procedure TForm1.lbledt_basketball_urlKeyPress(Sender: TObject; var Key: Char);
 begin
   if Key = #13 then
@@ -1085,6 +1250,7 @@ begin
   end;
 end;
 
+//
 function TForm1.ConvertToFloat(str:string):Real;
 begin
   if (str = '') or (str = Null) then

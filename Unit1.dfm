@@ -372,10 +372,6 @@ object Form1: TForm1
             Align = alClient
             Caption = 'Panel11'
             TabOrder = 1
-            ExplicitLeft = 480
-            ExplicitTop = 40
-            ExplicitWidth = 185
-            ExplicitHeight = 41
             object chrm_tmp: TChromium
               Left = 1
               Top = 1
@@ -386,9 +382,6 @@ object Form1: TForm1
               TabOrder = 0
               Visible = False
               OnLoadEnd = chrm_tmpLoadEnd
-              ExplicitLeft = 345
-              ExplicitWidth = 520
-              ExplicitHeight = 255
             end
             object chrm_basketball: TChromium
               Left = 1
@@ -402,9 +395,6 @@ object Form1: TForm1
               OnLoadError = chrm_basketballLoadError
               OnAddressChange = chrm_basketballAddressChange
               Options.ApplicationCache = STATE_DISABLED
-              ExplicitLeft = 345
-              ExplicitWidth = 520
-              ExplicitHeight = 255
             end
           end
         end
