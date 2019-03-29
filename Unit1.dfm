@@ -645,6 +645,10 @@ object Form1: TForm1
               Font.Style = [fsBold]
               ImageIndex = 1
               ParentFont = False
+              ExplicitLeft = 0
+              ExplicitTop = 0
+              ExplicitWidth = 0
+              ExplicitHeight = 0
               object mmo_basketball_message: TMemo
                 Left = 0
                 Top = 35

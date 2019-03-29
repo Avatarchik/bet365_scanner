@@ -935,10 +935,10 @@ var
   Body:IHTMLElement2;
   Tags,Games,Tmps,Tmps1,Tmps2,Tmps3,TmpCollection:IHTMLElementCollection;
   Tag,Tmp,GameElement,OddsElement,SpreadElement1,SpreadElement2:IHTMLElement;
-  i,j,k,l,count:integer;
+  i,j,k,l,count,market_group_count:integer;
   v:Variant;
   Game:TGame;
-  GameDate,data:string;
+  GameDate,data, odds_type:string;
   TmpGameList:TList<TGame>;
   TotalGameList:TList<TGame>;
   isGotData:boolean;
@@ -958,6 +958,7 @@ begin
     while Document.readyState <> 'complete' do Application.ProcessMessages;
     Body:=Document.body as IHTMLElement2;
     Tags:=Body.getElementsByTagName('div');
+    market_group_count:=0;
     if Tags.length > 0 then
     begin
       for i:=0 to Pred(Tags.length) do
@@ -973,107 +974,109 @@ begin
             Tmp:=Games.item(j, EmptyParam) as IHTMLElement;
             if AnsiSameText(Tmp._className, 'gl-MarketGroup_Wrapper ') then
             begin
-              Tmps:=Tmp.children as IHTMLElementCollection;
-              Tmps:=(Tmps.item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
-              //取得聯盟
-              Game.LeagueName:=SelectedLeagueList[LeagueIndex].Name;
-              //取得對戰球隊
-              Tmps1:=(Tmps.item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
-              Tmp:=Tmps1.item(0, EmptyParam) as IHTMLElement;
-              for k := 0 to Pred(Tmps1.length) do
+              //mmo_basketball_message.Lines.Add(Tmp.innerHTML);
+              //mmo_basketball_message.Lines.Add('********************************************************************************************');
+              inc(market_group_count);
+              Tmps:=((Tmp.children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+              if Tmps.length > 0 then
               begin
-                Tmp:=Tmps1.item(k, EmptyParam) as IHTMLElement;
-                //取得比賽日期
-                if AnsiContainsStr(Tmp._className, 'sl-MarketHeaderLabel') then
+                //取得聯盟
+                Game.LeagueName:=SelectedLeagueList[LeagueIndex].Name;
+                //取得對戰球隊
+                Tmps1:=(Tmps.item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+                for k := 0 to Pred(Tmps1.length) do
                 begin
-                  Game.GameDate:=Tmp.innerText;
-                end
-                //取得比賽時間、主客隊名稱
-                else if (
-                  AnsiSameText(Tmp._className, 'cm-ParticipantWithBookClosesDonBest sl-CouponParticipantIPPGBase ') or
-                  AnsiSameText(Tmp._className, 'cm-ParticipantWithBookClosesDonBest cm-ParticipantWithBookClosesDonBest_HasStatsIcon sl-CouponParticipantIPPGBase ')
-                ) then
-                begin                
-                  //取得比賽時間
-                  Game.GameTime:=((((Tmp.children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
-                  //mmo_basketball_message.Lines.Add(Game.GameTime);
-                  Tmp:=(Tmp.children as IHTMLElementCollection).item(1, EmptyParam) as IHTMLElement;
-                  //取得主隊名稱
-                  Game.HomeTeam:=((((Tmp.children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
-                  //取得客隊名稱
-                  Game.VisitTeam:=((((Tmp.children as IHTMLElementCollection).item(1, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
-                  form1.addGame(TmpGameList, Game);
-                end;
-              end;
-              // 讓分盤
-              if Tmps.length = 3 then
-              begin
-                // 取得第三欄資料
-                Tmps2:=(Tmps.item(2, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
-                count:=0;
-                isGotData:=false;
-                for k := 0 to Pred(Tmps2.length) do
-                begin
-                  Tmp:=Tmps2.item(k, EmptyParam) as IHTMLElement;
-                  if AnsiContainsStr(Tmp._className, 'cm-ParticipantOddsWithHandicapDonBest gl-Participant_General') then
+                  Tmp:=Tmps1.item(k, EmptyParam) as IHTMLElement;
+                  //取得比賽日期
+                  if AnsiContainsStr(Tmp._className, 'sl-MarketHeaderLabel') then
                   begin
-                    if isGotData = false then
+                    Game.GameDate:=Tmp.innerText;
+                  end
+                  //取得比賽時間、主客隊名稱
+                  else if (
+                    AnsiContainsStr(Tmp._className, 'cm-ParticipantWithBookClosesDonBest sl-CouponParticipantIPPGBase') or
+                    AnsiContainsStr(Tmp._className, 'cm-ParticipantWithBookClosesDonBest cm-ParticipantWithBookClosesDonBest_HasStatsIcon sl-CouponParticipantIPPGBase ')
+                  ) then
+                  begin
+                    //取得比賽時間
+                    Game.GameTime:=((((Tmp.children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
+                    //mmo_basketball_message.Lines.Add(Game.GameTime);
+                    Tmp:=(Tmp.children as IHTMLElementCollection).item(1, EmptyParam) as IHTMLElement;
+                    //取得主隊名稱
+                    Game.HomeTeam:=((((Tmp.children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
+                    //取得客隊名稱
+                    Game.VisitTeam:=((((Tmp.children as IHTMLElementCollection).item(1, EmptyParam) as IHTMLElement).children as IHTMLElementCollection).item(0, EmptyParam) as IHTMLElement).innerText;
+                    form1.addGame(TmpGameList, Game);
+                  end;
+                end;
+                // 讓分盤
+                if market_group_count = 1 then
+                begin
+                  Tmps2:=(Tmps.item(Tmps.length - 1, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+                  count:=0;
+                  isGotData:=false;
+                  for k := 0 to Pred(Tmps2.length) do
+                  begin
+                    Tmp:=Tmps2.item(k, EmptyParam) as IHTMLElement;
+                    if AnsiContainsStr(Tmp._className, 'cm-ParticipantOddsWithHandicapDonBest gl-Participant_General') then
                     begin
-                      if count < TmpGameList.Count then
+                      if isGotData = false then
                       begin
-                        Game:=TmpGameList.Items[count];
-                        TmpCollection:=Tmp.children as IHTMLElementCollection;
-                        data:='';
-                        for l := 0 to Pred(TmpCollection.length) do
+                        if count < TmpGameList.Count then
                         begin
-                          data:=data+' '+trim((TmpCollection.item(l, EmptyParam) as IHTMLElement).innerText);
+                          Game:=TmpGameList.Items[count];
+                          TmpCollection:=Tmp.children as IHTMLElementCollection;
+                          data:='';
+                          for l := 0 to Pred(TmpCollection.length) do
+                          begin
+                            data:=data+' '+trim((TmpCollection.item(l, EmptyParam) as IHTMLElement).innerText);
+                          end;
+                          form1.updateGame(TmpGameList, Game, 'Handicap', trim(data));
+                          isGotData:=true;
+                          inc(count);
                         end;
-                        form1.updateGame(TmpGameList, Game, 'Handicap', trim(data));
-                        isGotData:=true;
-                        inc(count);
-                      end;                      
-                    end
-                    else
-                    begin
-                      isGotData:=false;
+                      end
+                      else
+                      begin
+                        isGotData:=false;
+                      end;
                     end;
                   end;
                 end;
-              end;
-              // 總分盤
-              if Tmps.length = 2 then
-              begin
-                // 取得第二欄資料
-                Tmps3:=(Tmps.item(1, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
-                count:=0;
-                isGotData:=false;
-                for k := 0 to Pred(Tmps3.length) do
+                // 總分盤
+                if market_group_count = 2 then
                 begin
-                  Tmp:=Tmps3.item(k, EmptyParam) as IHTMLElement;
-                  if AnsiContainsStr(Tmp._className, 'cm-ParticipantCenteredAndStackedDonBest gl-Participant_General') then
+                  Tmps3:=(Tmps.item(1, EmptyParam) as IHTMLElement).children as IHTMLElementCollection;
+                  count:=0;
+                  isGotData:=false;
+                  for k := 0 to Pred(Tmps3.length) do
                   begin
-                    if isGotData = false then
+                    Tmp:=Tmps3.item(k, EmptyParam) as IHTMLElement;
+                    if AnsiContainsStr(Tmp._className, 'cm-ParticipantCenteredAndStackedDonBest gl-Participant_General') then
                     begin
-                      if count < TmpGameList.Count then
+                      if isGotData = false then
                       begin
-                        Game:=TmpGameList.Items[count];
-                        TmpCollection:=Tmp.children as IHTMLElementCollection;
-                        data:='';
-                        for l := 0 to Pred(TmpCollection.length) do
+                        if count < TmpGameList.Count then
                         begin
-                          data:=data+' '+trim((TmpCollection.item(l, EmptyParam) as IHTMLElement).innerText);
+                          Game:=TmpGameList.Items[count];
+                          TmpCollection:=Tmp.children as IHTMLElementCollection;
+                          data:='';
+                          for l := 0 to Pred(TmpCollection.length) do
+                          begin
+                            data:=data+' '+trim((TmpCollection.item(l, EmptyParam) as IHTMLElement).innerText);
+                          end;
+                          if trim(AnsiReplaceStr(data, '超過', '')) = '' then data:='';
+                          data:=AnsiReplaceStr(data, '超過', '超過 ');
+                          data:=AnsiReplaceStr(data, '低於', '低於 ');
+                          form1.updateGame(TmpGameList, Game, 'Total', trim(data));
+                          isGotData:=true;
+                          inc(count);
                         end;
-                        if trim(AnsiReplaceStr(data, '超過', '')) = '' then data:='';                                            
-                        data:=AnsiReplaceStr(data, '超過', '超過 ');
-                        data:=AnsiReplaceStr(data, '低於', '低於 ');
-                        form1.updateGame(TmpGameList, Game, 'Total', trim(data));
-                        isGotData:=true;
-                        inc(count);
-                      end;                      
-                    end
-                    else
-                    begin
-                      isGotData:=false;
+                      end
+                      else
+                      begin
+                        isGotData:=false;
+                      end;
                     end;
                   end;
                 end;
@@ -1087,7 +1090,7 @@ begin
     // debug用
     {for i := 0 to TmpGameList.Count -1 do
     begin
-      mmo_basketball_message.Lines.Add(TmpGameList.Items[i].LeagueName+','+TmpGameList.Items[i].GameDate+','+TmpGameList.Items[i].HomeTeam+','+TmpGameList.Items[i].VisitTeam+','+TmpGameList.Items[i].GameTime+','+TmpGameList.Items[i].Handicap+','+TmpGameList.Items[i].Total);
+      mmo_basketball_message.Lines.Add(TmpGameList.Items[i].LeagueName+','+TmpGameList.Items[i].GameDate+','+TmpGameList.Items[i].GameTime+','+TmpGameList.Items[i].HomeTeam+','+TmpGameList.Items[i].VisitTeam+','+TmpGameList.Items[i].Handicap+','+TmpGameList.Items[i].Total);
     end;}
 
     //有掃到賽事
